@@ -1,4 +1,4 @@
-# PRE-RELEASE (0.9.0)
+# PRE-RELEASE (0.9.1)
 
 # Additional Stacks Plugin for Serverless 1.x
 Created by Kenneth Falck <<kennu@sc5.io>> in 2017.  
@@ -81,14 +81,14 @@ custom:
     stackName:
       Deploy: After
       StackName: CustomName
-      Resources:
+      Resources: ...
 
 ```
 
 #### Deploy: Before|After
 
 By default, additional stacks are deployed *before* the main Serverless
-CloudFormatio resources. This ensures they are immediately available when your
+CloudFormation resources. This ensures they are immediately available when your
 Lambda functions start running.
 
 If you need to deploy an additional stack *after* other CloudFormation
