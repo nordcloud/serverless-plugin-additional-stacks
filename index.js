@@ -17,16 +17,31 @@ class ServerlessPlugin {
       DELETE_FAILED: 'failure',
       DELETE_IN_PROGRESS: 'in_progress',
       REVIEW_IN_PROGRESS: 'in_progress',
-      ROLLBACK_COMPLETE: 'success',
+      ROLLBACK_COMPLETE: 'failure',
       ROLLBACK_FAILED: 'failure',
       ROLLBACK_IN_PROGRESS: 'in_progress',
       UPDATE_COMPLETE: 'success',
       UPDATE_COMPLETE_CLEANUP_IN_PROGRESS: 'in_progress',
       UPDATE_IN_PROGRESS: 'in_progress',
-      UPDATE_ROLLBACK_COMPLETE: 'success',
+      UPDATE_ROLLBACK_COMPLETE: 'failure',
       UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS: 'in_progress',
       UPDATE_ROLLBACK_FAILED: 'failure',
       UPDATE_ROLLBACK_IN_PROGRESS: 'in_progress',
+    }
+
+    this.phrases = {
+      create: {
+        success: 'created successfully',
+        failure: 'create failed',
+      },
+      update: {
+        success: 'updated successfully',
+        failure: 'updated failed',
+      },
+      delete: {
+        success: 'removed successfully',
+        failure: 'remove failed',
+      },
     }
 
     this.commands = {
@@ -69,6 +84,7 @@ class ServerlessPlugin {
     this.hooks = {
       'before:deploy:deploy': this.beforeDeployGlobal.bind(this),
       'after:deploy:deploy': this.afterDeployGlobal.bind(this),
+      'after:info:info': this.afterInfoGlobal.bind(this),
       'deploy:additionalstacks:deploy': this.deployAdditionalStacksDeploy.bind(this),
       'remove:additionalstacks:remove': this.removeAdditionalStacksRemove.bind(this),
     }
@@ -117,6 +133,15 @@ class ServerlessPlugin {
     if (Object.keys(stacks).length > 0) {
       this.serverless.cli.log('Deploying additional stacks...')
       return this.deployStacks(stacks)
+    }
+  }
+
+  // Show additional stack info after normal info
+  afterInfoGlobal() {
+    const stacks = this.getAdditionalStacks()
+    if (Object.keys(stacks).length > 0) {
+      this.serverless.cli.consoleLog('additional stacks:')
+      return this.infoStacks(stacks)
     }
   }
 
@@ -235,6 +260,18 @@ class ServerlessPlugin {
     return promise
   }
 
+  // This shows the info on all specified stacks
+  infoStacks(stacks) {
+    let promise = Promise.resolve()
+    Object.keys(stacks).map(stackName => {
+      promise = promise
+      .then(() => {
+        return this.infoStack(stackName, stacks[stackName])
+      })
+    })
+    return promise
+  }
+
   describeStack(fullStackName) {
     return this.provider.request(
       'CloudFormation',
@@ -281,7 +318,7 @@ class ServerlessPlugin {
       this.options.region
     )
     .then(() => {
-      return this.waitForStack(stackName, fullStackName)
+      return this.waitForStack(stackName, fullStackName, 'create')
     })
   }
 
@@ -307,7 +344,7 @@ class ServerlessPlugin {
     )
     .then(() => {
       this.serverless.cli.log('Updating additional stack ' + stackName + '...')
-      return this.waitForStack(stackName, fullStackName)
+      return this.waitForStack(stackName, fullStackName, 'update')
     })
     .then(null, err => {
       if (err.message && err.message.match(/^No updates/)) {
@@ -334,27 +371,44 @@ class ServerlessPlugin {
       this.options.region
     )
     .then(() => {
-      return this.waitForStack(stackName, fullStackName)
+      return this.waitForStack(stackName, fullStackName, 'delete')
     })
   }
 
-  waitForStack(stackName, fullStackName) {
+  // This is where we actually show information about the CloudFormation stack in AWS
+  infoStack(stackName, stack) {
+    // Generate full stack name
+    const fullStackName = this.getFullStackName(stackName)
+    return this.describeStack(fullStackName)
+    .then(status => {
+      if (!status) {
+        this.serverless.cli.consoleLog('  ' + stackName + ': does not exist')
+      } else {
+        this.serverless.cli.consoleLog('  ' + stackName + ': ' + status.StackStatus)
+      }
+    })
+  }
+
+  waitForStack(stackName, fullStackName, operation) {
+    let dots = 0
     const readMore = () => {
       return this.describeStack(fullStackName)
       .then(response => {
         if (!response) {
           // Stack does not exist
-          this.serverless.cli.log('Additional stack ' + stackName + ' removed.')
+          if (dots) this.serverless.cli.consoleLog('')
+          this.serverless.cli.log('Additional stack ' + stackName + ' removed successfully.')
           return
         }
-        //console.log('STATUS', response)
         const state = this.stackStatusCodes[response.StackStatus]
         if (state === 'in_progress') {
           // Continue until no longer in progress
           this.serverless.cli.printDot()
+          dots += 1
           return new Promise((resolve, reject) => setTimeout(resolve, 5000)).then(readMore)
         } else {
-          this.serverless.cli.log('Deployment ' + state + ' (stack status ' + response.StackStatus + ')')
+          if (dots) this.serverless.cli.consoleLog('')
+          this.serverless.cli.log('Additional stack ' + stackName + ' ' + this.phrases[operation][state] + ' (' + response.StackStatus + ').')
         }
       })
     }
