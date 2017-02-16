@@ -1,4 +1,4 @@
-# WORK IN PROGRESS - NOT PUBLISHED YET
+# PRE-RELEASE (0.9.0)
 
 # Additional Stacks Plugin for Serverless 1.x
 Created by Kenneth Falck <<kennu@sc5.io>> in 2017.  
