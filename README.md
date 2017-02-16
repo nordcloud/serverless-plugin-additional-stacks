@@ -78,13 +78,12 @@ permanentResources:
         Name: ${self:service}-data
 ```
 
+The syntax of the Resources section is identical to the normal resources
+in `serverless.yml`, so you can just cut-paste resource definitions around.
 
 The full name of the deployed CloudFormation stack will include the service
 name. If your service is called `my-service` and you deploy it to the `dev`
-stage, the additional stack would be called `my-service-permanent-dev`.
-
-The syntax of the Resources section is identical to the normal resources
-in `serverless.yml`, so you can just cut-paste resource definitions around.
+stage, the additional stack would be called `my-service-dev-permanent`.
 
 ### Using Deploy: After stacks
 
@@ -114,16 +113,20 @@ Your additional stacks will be deployed automatically when you run:
 
     sls deploy
 
+To deploy all additional stacks without deploying tje Serverless service, you can use:
+
+    sls deploy additionalstacks
+
 To deploy an additional stack individually, you can use:
 
-    sls deploy additionalstack [stackname]
+    sls deploy additionalstacks --stack [stackname]
 
 If you want to remove an additional stack, you need to run:
 
-    sls remove additionalstack [stackname]
+    sls remove additionalstacks --stack [stackname]
 
 Or you can remove all additional stacks in the service with:
 
-    sls remove additionalstack -a
+    sls remove additionalstacks
 
 Alternatively, you can remove stacks manually in AWS CloudFormation Console.
