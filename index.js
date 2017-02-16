@@ -8,6 +8,27 @@ class ServerlessPlugin {
     this.options = options
     this.provider = this.serverless.getProvider('aws')
 
+    // Map CloudFormation status codes to either 'success', 'failure' or 'in_progress'
+    this.stackStatusCodes = {
+      CREATE_COMPLETE: 'success',
+      CREATE_IN_PROGRESS: 'in_progress',
+      CREATE_FAILED: 'failure',
+      DELETE_COMPLETE: 'success',
+      DELETE_FAILED: 'failure',
+      DELETE_IN_PROGRESS: 'in_progress',
+      REVIEW_IN_PROGRESS: 'in_progress',
+      ROLLBACK_COMPLETE: 'success',
+      ROLLBACK_FAILED: 'failure',
+      ROLLBACK_IN_PROGRESS: 'in_progress',
+      UPDATE_COMPLETE: 'success',
+      UPDATE_COMPLETE_CLEANUP_IN_PROGRESS: 'in_progress',
+      UPDATE_IN_PROGRESS: 'in_progress',
+      UPDATE_ROLLBACK_COMPLETE: 'success',
+      UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS: 'in_progress',
+      UPDATE_ROLLBACK_FAILED: 'failure',
+      UPDATE_ROLLBACK_IN_PROGRESS: 'in_progress',
+    }
+
     this.commands = {
       deploy: {
         commands: {
@@ -26,12 +47,30 @@ class ServerlessPlugin {
           },
         },
       },
+      remove: {
+        commands: {
+          additionalstacks: {
+            usage: 'Remove additional stacks',
+            lifecycleEvents: [
+              'remove',
+            ],
+            options: {
+              stack: {
+                usage: 'Additional stack name to remove',
+                shortcut: 'k',
+                required: false,
+              },
+            },
+          },
+        },
+      },
     }
 
     this.hooks = {
       'before:deploy:deploy': this.beforeDeployGlobal.bind(this),
       'after:deploy:deploy': this.afterDeployGlobal.bind(this),
-      'deploy:additionalstacks:deploy': this.deployAdditionalStackDeploy.bind(this),
+      'deploy:additionalstacks:deploy': this.deployAdditionalStacksDeploy.bind(this),
+      'remove:additionalstacks:remove': this.removeAdditionalStacksRemove.bind(this),
     }
   }
 
@@ -81,8 +120,8 @@ class ServerlessPlugin {
     }
   }
 
-  // Deploy additional stacks specified with sls deploy stack [name]
-  deployAdditionalStackDeploy() {
+  // Deploy additional stacks specified with sls deploy additionalstack [name]
+  deployAdditionalStacksDeploy() {
     const stacks = this.getAdditionalStacks()
 
     if (this.options.stack) {
@@ -98,6 +137,29 @@ class ServerlessPlugin {
       if (Object.keys(stacks).length > 0) {
         this.serverless.cli.log('Deploying all additional stacks...')
         return this.deployStacks(stacks)
+      } else {
+        this.serverless.cli.log('No additional stacks defined. Add a custom.additionalStacks section to serverless.yml.')
+        return Promise.resolve()
+      }
+    }
+  }
+
+  // Remove additional stacks specified with sls remove additionalstack [name]
+  removeAdditionalStacksRemove() {
+    const stacks = this.getAdditionalStacks()
+
+    if (this.options.stack) {
+      const stack = stacks[this.options.stack]
+      if (stack) {
+        return this.deleteStack(this.options.stack, stack)
+      } else {
+        return Promise.reject(new Error('Additional stack not found: ' + this.options.stack))
+      }
+    } else {
+      // Deploy all additional stacks
+      if (Object.keys(stacks).length > 0) {
+        this.serverless.cli.log('Removing all additional stacks...')
+        return this.deleteStacks(stacks)
       } else {
         this.serverless.cli.log('No additional stacks defined. Add a custom.additionalStacks section to serverless.yml.')
         return Promise.resolve()
@@ -153,16 +215,24 @@ class ServerlessPlugin {
     .then(stackStatus => {
       if (!stackStatus) {
         // Create stack
-        this.serverless.cli.log('Creating CloudFormation stack ' + fullStackName + '...')
-        console.log('TEMPL', compiledCloudFormationTemplate)
-        console.log('TAGS', stackTags)
-        return this.createStack(fullStackName, compiledCloudFormationTemplate, stackTags)
+        return this.createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
       } else {
         // Update stack
-        this.serverless.cli.log('Updating CloudFormation stack ' + fullStackName + '...')
-        return this.updateStack(fullStackName, compiledCloudFormationTemplate, stackTags)
+        return this.updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
       }
     })
+  }
+
+  // This deletes all the specified stacks
+  deleteStacks(stacks) {
+    let promise = Promise.resolve()
+    Object.keys(stacks).map(stackName => {
+      promise = promise
+      .then(() => {
+        return this.deleteStack(stackName, stacks[stackName])
+      })
+    })
+    return promise
   }
 
   describeStack(fullStackName) {
@@ -188,7 +258,7 @@ class ServerlessPlugin {
     })
   }
 
-  createStack(fullStackName, compiledCloudFormationTemplate, stackTags) {
+  createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags) {
     // These are the same parameters that Serverless uses in https://github.com/serverless/serverless/blob/master/lib/plugins/aws/deploy/lib/createStack.js
     const params = {
       StackName: fullStackName,
@@ -202,6 +272,7 @@ class ServerlessPlugin {
       Tags: Object.keys(stackTags).map((key) => ({ Key: key, Value: stackTags[key] })),
     }
 
+    this.serverless.cli.log('Creating additional stack ' + stackName + '...')
     return this.provider.request(
       'CloudFormation',
       'createStack',
@@ -209,9 +280,12 @@ class ServerlessPlugin {
       this.options.stage,
       this.options.region
     )
+    .then(() => {
+      return this.waitForStack(stackName, fullStackName)
+    })
   }
 
-  updateStack(fullStackName, compiledCloudFormationTemplate, stackTags) {
+  updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags) {
     // These are the same parameters that Serverless uses in https://github.com/serverless/serverless/blob/master/lib/plugins/aws/lib/updateStack.js
     const params = {
       StackName: fullStackName,
@@ -231,9 +305,14 @@ class ServerlessPlugin {
       this.options.stage,
       this.options.region
     )
+    .then(() => {
+      this.serverless.cli.log('Updating additional stack ' + stackName + '...')
+      return this.waitForStack(stackName, fullStackName)
+    })
     .then(null, err => {
       if (err.message && err.message.match(/^No updates/)) {
         // Stack is unchanged, ignore error
+        this.serverless.cli.log('Additional stack ' + stackName + ' has not changed.')
         return Promise.resolve()
       } else {
         return Promise.reject(err)
@@ -241,12 +320,42 @@ class ServerlessPlugin {
     })
   }
 
-  waitForStack(fullStackName) {
+  // This is where we actually handle the stack deletion from AWS
+  deleteStack(stackName, stack) {
+    // Generate full stack name
+    const fullStackName = this.getFullStackName(stackName)
+    this.serverless.cli.log('Removing additional stack ' + stackName + '...')
+    return this.provider.request(
+      'CloudFormation',
+      'deleteStack', {
+        StackName: fullStackName,
+      },
+      this.options.stage,
+      this.options.region
+    )
+    .then(() => {
+      return this.waitForStack(stackName, fullStackName)
+    })
+  }
+
+  waitForStack(stackName, fullStackName) {
     const readMore = () => {
-      return describeStack(fullStackName)
+      return this.describeStack(fullStackName)
       .then(response => {
-        console.log('STATUS', response)
-        setTimeout(readMore, 5000)
+        if (!response) {
+          // Stack does not exist
+          this.serverless.cli.log('Additional stack ' + stackName + ' removed.')
+          return
+        }
+        //console.log('STATUS', response)
+        const state = this.stackStatusCodes[response.StackStatus]
+        if (state === 'in_progress') {
+          // Continue until no longer in progress
+          this.serverless.cli.printDot()
+          return new Promise((resolve, reject) => setTimeout(resolve, 5000)).then(readMore)
+        } else {
+          this.serverless.cli.log('Deployment ' + state + ' (stack status ' + response.StackStatus + ')')
+        }
       })
     }
     return readMore()
