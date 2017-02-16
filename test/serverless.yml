@@ -110,6 +110,7 @@ custom:
             TopicName: "${self:service}-primary-${self:custom.stage}"
     secondary:
       Deploy: After
+      StackName: ${self:service}-secondary-${self:custom.stage}
       Resources:
         SnsTopicSecondary:
           Type: AWS::SNS::Topic

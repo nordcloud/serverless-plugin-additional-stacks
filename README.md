@@ -63,23 +63,6 @@ custom:
             Name: ${self:service}-data
 ```
 
-If you'd like to place the additional resource definitions at the end of
-`serverless.yml` but keep the `custom` section elsewhere, you can use a
-Serverless variable to split the configuration like this:
-
-```yml
-custom:
-  additionalStacks:
-    permanent: ${self:permanentResources}
-
-permanentResources:
-  Resources:
-    S3BucketData:
-      Type: AWS::S3::Bucket
-      Properties:
-        Name: ${self:service}-data
-```
-
 The syntax of the Resources section is identical to the normal resources
 in `serverless.yml`, so you can just cut-paste resource definitions around.
 
@@ -87,27 +70,36 @@ The full name of the deployed CloudFormation stack will include the service
 name. If your service is called `my-service` and you deploy it to the `dev`
 stage, the additional stack would be called `my-service-dev-permanent`.
 
-### Using Deploy: After stacks
+### Customizing additional stacks
 
-By default, additional stacks are deployed *before* any other CloudFormation
-resources. This ensures they are immediately available when your Lambda
-functions run.
-
-If you need to deploy an additional stack *after* other CloudFormation
-resources, you can add `Deploy: After` to its definition. Here's an example:
+The plugin supports some directives you can use to control how your
+additional stacks are deployed. They are described below.
 
 ```yml
 custom:
   additionalStacks:
-    secondary:
+    stackName:
       Deploy: After
+      StackName: CustomName
       Resources:
-        S3BucketData:
-          Type: AWS::S3::Bucket
-          Properties:
-            Name: ${self:service}-data
 
 ```
+
+#### Deploy: Before|After
+
+By default, additional stacks are deployed *before* the main Serverless
+CloudFormatio resources. This ensures they are immediately available when your
+Lambda functions start running.
+
+If you need to deploy an additional stack *after* other CloudFormation
+resources, you can add `Deploy: After` to its definition.
+
+#### StackName: CustomName
+
+By default, additional CloudFormation stacks are named by appending the
+specified *stackName* to the Serverless stack name. If you want to customize
+the CloudFormation name of the stack, you can specify `StackName: CustomName`.
+This is useful for controlling existing stacks.
 
 ## Command Line Usage
 

@@ -193,8 +193,9 @@ class ServerlessPlugin {
   }
 
   // Generate a full name for an additional stack (used in AWS)
-  getFullStackName(stackName) {
-    return this.provider.naming.getStackName() + '-' + stackName
+  getFullStackName(stackName, stack) {
+    const defaultName = this.provider.naming.getStackName() + '-' + stackName
+    return stack.StackName || defaultName
   }
 
   // This deploys all the specified stacks
@@ -234,7 +235,7 @@ class ServerlessPlugin {
     }
 
     // Generate full stack name
-    const fullStackName = this.getFullStackName(stackName)
+    const fullStackName = this.getFullStackName(stackName, stack)
 
     return this.describeStack(fullStackName)
     .then(stackStatus => {
@@ -360,7 +361,7 @@ class ServerlessPlugin {
   // This is where we actually handle the stack deletion from AWS
   deleteStack(stackName, stack) {
     // Generate full stack name
-    const fullStackName = this.getFullStackName(stackName)
+    const fullStackName = this.getFullStackName(stackName, stack)
     this.serverless.cli.log('Removing additional stack ' + stackName + '...')
     return this.provider.request(
       'CloudFormation',
@@ -378,7 +379,7 @@ class ServerlessPlugin {
   // This is where we actually show information about the CloudFormation stack in AWS
   infoStack(stackName, stack) {
     // Generate full stack name
-    const fullStackName = this.getFullStackName(stackName)
+    const fullStackName = this.getFullStackName(stackName, stack)
     return this.describeStack(fullStackName)
     .then(status => {
       if (!status) {
