@@ -238,13 +238,19 @@ class ServerlessPlugin {
     const fullStackName = this.getFullStackName(stackName, stack)
 
     return this.describeStack(fullStackName)
+    .then(() => { this.writeUpdateTemplateToDisk(stackName, compiledCloudFormationTemplate); })
     .then(stackStatus => {
-      if (!stackStatus) {
-        // Create stack
-        return this.createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
+      if(this.options.noDeploy){
+        this.serverless.cli.log('Did not deploy ' + fullStackName + ' due to --noDeploy')
+        return Promise.resolve()
       } else {
-        // Update stack
-        return this.updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
+        if (!stackStatus) {
+          // Create stack
+          return this.createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
+        } else {
+          // Update stack
+          return this.updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
+        }
       }
     })
   }
@@ -321,6 +327,17 @@ class ServerlessPlugin {
     .then(() => {
       return this.waitForStack(stackName, fullStackName, 'create')
     })
+  }
+
+  writeUpdateTemplateToDisk(stackName, stack) {
+    this.serverless.cli.log('Writing template for additional stack ' + stackName + '...')
+    const updateOrCreate = this.createLater ? 'create' : 'update';
+    const cfTemplateFilePath = path.join(this.serverless.config.servicePath,
+      '.serverless', `cloudformation-template-${updateOrCreate}-stack-${stackName}.json`);
+
+    this.serverless.utils.writeFileSync(cfTemplateFilePath, stack);
+
+    return Promise.resolve();
   }
 
   updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags) {
