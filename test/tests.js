@@ -27,15 +27,15 @@ const SECONDARY_STACK = 'secondary'
 const SECONDARY_STACK_FULLNAME = 'additional-stacks-plugin-service-test-customname-secondary'
 
 function sls(args) {
-  console.log('  ', chalk.gray.dim('$'), chalk.gray('sls ' + args.join(' ')))
+  console.log('   ', chalk.gray.dim('$'), chalk.gray('sls ' + args.join(' ')))
   const dir = path.join(__dirname, 'service')
   return new Promise((resolve, reject) => {
     childProcess.execFile(SLS, args, {
       cwd: dir,
     }, (err, stdout, stderr) => {
       if (err) return reject(err)
-      if (stdout) console.log(stdout)
-      if (stderr) console.error(stderr)
+      if (stdout) console.log(chalk.gray.dim(stdout))
+      if (stderr) console.error(chalk.red(stderr))
       resolve()
     })
   })
@@ -67,7 +67,7 @@ function deleteStack(stackName) {
   })
   .then(response => {
     if (response) {
-      console.log('  ', chalk.yellow.dim('Cleaning up additional stack'), chalk.gray.dim(stackName))
+      console.log('   ', chalk.yellow.dim('Cleaning up additional stack ' + stackName))
       return cloudformation.deleteStack({
         StackName: stackName,
       })
@@ -76,7 +76,6 @@ function deleteStack(stackName) {
   })
   .then(response => {
     if (response) {
-      console.log('  ', chalk.yellow.dim('Waiting for additional stack'), chalk.gray.dim(stackName))
       return cloudformation.waitFor('stackDeleteComplete', {
         StackName: stackName,
       })
@@ -101,7 +100,7 @@ function deleteAllStacks() {
   })
   .then(response => {
     if (response) {
-      console.log('  ', chalk.yellow.dim('Cleaning up'), chalk.gray.dim('base stack'))
+      console.log('   ', chalk.yellow.dim('Cleaning up base stack'))
       return sls(['remove'])
     }
   })
@@ -128,24 +127,12 @@ describe('Automatic Stack Deployment', () => {
       return describeAllStacks()
     })
     .then(responses => {
-      //console.log('ALL STACKS RESPONSES:', responses)
       assert.isOk(responses[0], 'serverless stack')
       assert.isOk(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
       assert.equal(responses[0].StackStatus, 'UPDATE_COMPLETE', 'serverless stack')
       assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
       assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
-    })
-  })
-})
-/*
-
-  it('all stacks updated on sls deploy', () => {
-    return Promise.resolve()
-    .then(() => {
-      return sls(['deploy'])
-    })
-    .then(() => {
     })
   })
 
@@ -155,6 +142,34 @@ describe('Automatic Stack Deployment', () => {
       return sls(['deploy'])
     })
     .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isOk(responses[0], 'serverless stack')
+      assert.isOk(responses[1], 'primary stack')
+      assert.isOk(responses[2], 'secondary stack')
+      assert.equal(responses[0].StackStatus, 'UPDATE_COMPLETE', 'serverless stack')
+      assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
+      assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
+    })
+  })
+
+  it('all stacks updated on sls deploy', () => {
+    return Promise.resolve()
+    .then(() => {
+      // The --topicname argument will cause the secondary stack to rename the SNS topic
+      return sls(['deploy', '--topicname', 'newname'])
+    })
+    .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isOk(responses[0], 'serverless stack')
+      assert.isOk(responses[1], 'primary stack')
+      assert.isOk(responses[2], 'secondary stack')
+      assert.equal(responses[0].StackStatus, 'UPDATE_COMPLETE', 'serverless stack')
+      assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
+      assert.equal(responses[2].StackStatus, 'UPDATE_COMPLETE', 'secondary stack')
     })
   })
 
@@ -164,6 +179,14 @@ describe('Automatic Stack Deployment', () => {
       return sls(['remove'])
     })
     .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isNull(responses[0], 'serverless stack')
+      assert.isOk(responses[1], 'primary stack')
+      assert.isOk(responses[2], 'secondary stack')
+      assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
+      assert.equal(responses[2].StackStatus, 'UPDATE_COMPLETE', 'secondary stack')
     })
   })
 })
@@ -180,15 +203,14 @@ describe('Manual Stack Deployment', () => {
       return sls(['deploy', 'additionalstacks'])
     })
     .then(() => {
+      return describeAllStacks()
     })
-  })
-
-  it('additional stacks updated on sls deploy additionalstacks', () => {
-    return Promise.resolve()
-    .then(() => {
-      return sls(['deploy', 'additionalstacks'])
-    })
-    .then(() => {
+    .then(responses => {
+      assert.isNull(responses[0], 'serverless stack')
+      assert.isOk(responses[1], 'primary stack')
+      assert.isOk(responses[2], 'secondary stack')
+      assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
+      assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
     })
   })
 
@@ -198,19 +220,57 @@ describe('Manual Stack Deployment', () => {
       return sls(['deploy', 'additionalstacks'])
     })
     .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isNull(responses[0], 'serverless stack')
+      assert.isOk(responses[1], 'primary stack')
+      assert.isOk(responses[2], 'secondary stack')
+      assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
+      assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
+    })
+  })
+
+  it('additional stacks updated on sls deploy additionalstacks', () => {
+    return Promise.resolve()
+    .then(() => {
+      // The --topicname argument will cause the secondary stack to rename the SNS topic
+      return sls(['deploy', 'additionalstacks', '--topicname', 'newname'])
+    })
+    .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isNull(responses[0], 'serverless stack')
+      assert.isOk(responses[1], 'primary stack')
+      assert.isOk(responses[2], 'secondary stack')
+      assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
+      assert.equal(responses[2].StackStatus, 'UPDATE_COMPLETE', 'secondary stack')
     })
   })
 
   it('additional stacks removed on sls remove additionalstacks', () => {
     return Promise.resolve()
     .then(() => {
+      // Deploy the base stack to see that it's not removed
+      return sls(['deploy'])
+    })
+    .then(() => {
       return sls(['remove', 'additionalstacks'])
     })
     .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isOk(responses[0], 'serverless stack')
+      assert.isNull(responses[1], 'primary stack')
+      assert.isNull(responses[2], 'secondary stack')
+      assert.equal(responses[0].StackStatus, 'UPDATE_COMPLETE', 'serverless stack')
     })
   })
 })
 
+/*
 describe('Individual Stack Deployment', () => {
   before(() => {
     // Clean up before tests
