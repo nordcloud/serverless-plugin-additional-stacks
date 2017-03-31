@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: additional-stacks-plugin-test
+service: additional-stacks-plugin-service
 
 plugins:
   - serverless-plugin-additional-stacks
@@ -23,7 +23,7 @@ plugins:
 provider:
   name: aws
   runtime: nodejs4.3
-  stage: dev
+  stage: test
   region: eu-west-1
 
 # you can add statements to the Lambda function's IAM Role here
@@ -110,7 +110,7 @@ custom:
             TopicName: "${self:service}-primary-${self:custom.stage}"
     secondary:
       Deploy: After
-      StackName: ${self:service}-secondary-${self:custom.stage}
+      StackName: ${self:service}-${self:custom.stage}-customname-secondary
       Resources:
         SnsTopicSecondary:
           Type: AWS::SNS::Topic
