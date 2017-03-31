@@ -237,8 +237,8 @@ class ServerlessPlugin {
     // Generate full stack name
     const fullStackName = this.getFullStackName(stackName, stack)
 
-    return this.describeStack(fullStackName)
-    .then(() => { this.writeUpdateTemplateToDisk(stackName, compiledCloudFormationTemplate); })
+    return this.writeUpdateTemplateToDisk(stackName, compiledCloudFormationTemplate)
+    .then(() => { return this.describeStack(fullStackName) })
     .then(stackStatus => {
       if(this.options.noDeploy){
         this.serverless.cli.log('Did not deploy ' + fullStackName + ' due to --noDeploy')
