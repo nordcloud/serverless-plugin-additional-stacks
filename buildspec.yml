@@ -2,7 +2,8 @@ version: 0.1
 phases:
   install:
     commands:
-      npm install
+      - cd test && npm install
+      - echo "CURRENT STATUS" && pwd && ls -lR
   build:
     commands:
-      npm test
+      - cd test && npm test

@@ -5,6 +5,6 @@
   "repository": {},
   "license": "MIT",
   "scripts": {
-    "test": "cd test && npm install && npm run test"
+    "test": "cd test && npm run test"
   }
 }
