@@ -3,7 +3,7 @@
 Created by Kenneth Falck <<kennu@sc5.io>> in 2017.  
 Copyright [SC5 Online](https://sc5.io). Released under the MIT license.
 
-![Build Status](https://codebuilder.sc5.io/badge/serverless-plugin-additional-stacks?1)
+![Build Status](https://codebuilder.sc5.io/badge/serverless-plugin-additional-stacks)
 
 ## Overview and purpose
 
