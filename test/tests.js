@@ -33,9 +33,9 @@ function sls(args) {
     childProcess.execFile(SLS, args, {
       cwd: dir,
     }, (err, stdout, stderr) => {
-      if (err) return reject(err)
       if (stdout) console.log(chalk.gray.dim(stdout))
       if (stderr) console.error(chalk.red(stderr))
+      if (err) return reject(err)
       resolve(stdout)
     })
   })
