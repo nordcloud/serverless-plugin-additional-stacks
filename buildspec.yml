@@ -2,7 +2,7 @@ version: 0.1
 phases:
   install:
     commands:
-      yarn install
+      npm install
   build:
     commands:
-      yarn test
+      npm test
