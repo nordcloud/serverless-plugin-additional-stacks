@@ -27,7 +27,7 @@ const SECONDARY_STACK = 'secondary'
 const SECONDARY_STACK_FULLNAME = 'additional-stacks-plugin-service-test-customname-secondary'
 
 function sls(args) {
-  console.log('   ', chalk.gray.dim('$'), chalk.gray('sls ' + args.join(' ')))
+  console.log('   ', chalk.gray.dim('$'), chalk.gray.dim('sls ' + args.join(' ')))
   const dir = path.join(__dirname, 'service')
   return new Promise((resolve, reject) => {
     childProcess.execFile(SLS, args, {
@@ -36,7 +36,7 @@ function sls(args) {
       if (err) return reject(err)
       if (stdout) console.log(chalk.gray.dim(stdout))
       if (stderr) console.error(chalk.red(stderr))
-      resolve()
+      resolve(stdout)
     })
   })
 }
@@ -270,46 +270,72 @@ describe('Manual Stack Deployment', () => {
   })
 })
 
-/*
 describe('Individual Stack Deployment', () => {
   before(() => {
     // Clean up before tests
     return deleteAllStacks()
   })
 
-  it('only specified stack is deployed on sls deploy additionalstacks --stack', () => {
+  it('specified stack is deployed on sls deploy additionalstacks --stack', () => {
     return Promise.resolve()
     .then(() => {
-      return sls(['deploy', 'additionalstacks', '--stack', PRIMARY_STACK])
+      return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK])
     })
     .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isNull(responses[0], 'serverless stack')
+      assert.isNull(responses[1], 'primary stack')
+      assert.isOk(responses[2], 'secondary stack')
+      assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'primary stack')
     })
   })
 
-  it('only specified stack is updated on sls deploy additionalstacks --stack', () => {
+  it('specified stack is unchanged on sls deploy additionalstacks --stack', () => {
     return Promise.resolve()
     .then(() => {
-      return sls(['deploy', 'additionalstacks', '--stack', PRIMARY_STACK])
+      return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK])
     })
     .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isNull(responses[0], 'serverless stack')
+      assert.isNull(responses[1], 'primary stack')
+      assert.isOk(responses[2], 'secondary stack')
+      assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
     })
   })
 
-  it('only specified stack is unchanged on sls deploy additionalstacks --stack', () => {
+  it('specified stack is updated on sls deploy additionalstacks --stack', () => {
     return Promise.resolve()
     .then(() => {
-      return sls(['deploy', 'additionalstacks', '--stack', PRIMARY_STACK])
+      return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname'])
     })
     .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isNull(responses[0], 'serverless stack')
+      assert.isNull(responses[1], 'primary stack')
+      assert.isOk(responses[2], 'secondary stack')
+      assert.equal(responses[2].StackStatus, 'UPDATE_COMPLETE', 'secondary stack')
     })
   })
 
-  it('only specified stack is removed on sls deploy additionalstacks --stack', () => {
+  it('specified stack is removed on sls deploy additionalstacks --stack', () => {
     return Promise.resolve()
     .then(() => {
-      return sls(['remove', 'additionalstacks', '--stack', PRIMARY_STACK])
+      return sls(['remove', 'additionalstacks', '--stack', SECONDARY_STACK])
     })
     .then(() => {
+      return describeAllStacks()
+    })
+    .then(responses => {
+      assert.isNull(responses[0], 'serverless stack')
+      assert.isNull(responses[1], 'primary stack')
+      assert.isNull(responses[2], 'secondary stack')
     })
   })
 })
@@ -320,31 +346,29 @@ describe('Stack Info', () => {
     return deleteAllStacks()
   })
 
-  it('is shown as in progress while deploying', () => {
-    return Promise.resolve()
-    .then(() => {
-      return sls(['info'])
-    })
-    .then(() => {
-    })
-  })
-
   it('is shown as completed after deploying', () => {
     return Promise.resolve()
     .then(() => {
-      return sls(['info'])
+      return sls(['deploy'])
     })
     .then(() => {
+      return sls(['info'])
+    })
+    .then(stdout => {
+      console.log('STDOUT', stdout)
     })
   })
 
   it('is not shown after removing', () => {
     return Promise.resolve()
     .then(() => {
-      return sls(['info'])
+      return sls(['remove', 'additionalstacks'])
     })
     .then(() => {
+      return sls(['info'])
+    })
+    .then(stdout => {
+      console.log('STDOUT', stdout)
     })
   })
 })
-*/
