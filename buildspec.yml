@@ -3,7 +3,7 @@ phases:
   install:
     commands:
       - cd test && npm install
-      - echo "CURRENT STATUS" && pwd && ls -lR
+      - echo "CURRENT STATUS" && pwd && ls -l test/service/node_modules
   build:
     commands:
       - cd test && npm test
