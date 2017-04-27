@@ -230,8 +230,11 @@ class ServerlessPlugin {
       STAGE: this.options.stage || this.serverless.service.provider.stage
     }
     if (typeof stack.Tags === 'object') {
-      // Add custom tags
+      // Add custom tags specified only for this stack
       Object.assign(stackTags, stack.Tags)
+    } else if (typeof this.serverless.service.provider.stackTags === 'object') {
+      // Add stackTags from Serverless main provider config
+      Object.assign(stackTags, this.serverless.service.provider.stackTags)
     }
 
     // Generate full stack name

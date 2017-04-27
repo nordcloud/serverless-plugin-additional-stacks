@@ -30,13 +30,19 @@ function sls(args) {
   console.log('   ', chalk.gray.dim('$'), chalk.gray.dim('sls ' + args.join(' ')))
   const dir = path.join(__dirname, 'service')
   return new Promise((resolve, reject) => {
-    childProcess.execFile(SLS, args, {
+    const child = childProcess.execFile(SLS, args, {
       cwd: dir,
     }, (err, stdout, stderr) => {
-      if (stdout) console.log(chalk.gray.dim(stdout))
-      if (stderr) console.error(chalk.red(stderr))
+      // if (stdout) console.log(chalk.gray.dim(stdout))
+      // if (stderr) console.error(chalk.red(stderr))
       if (err) return reject(err)
       resolve(stdout)
+    })
+    child.stdout.on('data', data => {
+      process.stdout.write(chalk.gray.dim(data))
+    })
+    child.stderr.on('data', data => {
+      process.stderr.write(chalk.red(data))
     })
   })
 }
@@ -133,6 +139,9 @@ describe('Automatic Stack Deployment', () => {
       assert.equal(responses[0].StackStatus, 'UPDATE_COMPLETE', 'serverless stack')
       assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
       assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
+      assert.equal(responses[0].Tags.filter(tag => tag.Key === 'Owner')[0].Value, 'owner@example.org', 'serverless stack custom tag')
+      assert.equal(responses[1].Tags.filter(tag => tag.Key === 'Owner')[0].Value, 'owner@example.org', 'primary stack custom tag')
+      assert.equal(responses[2].Tags.filter(tag => tag.Key === 'Owner')[0].Value, 'another@example.org', 'secondary stack custom tag')
     })
   })
 
@@ -355,7 +364,7 @@ describe('Stack Info', () => {
       return sls(['info'])
     })
     .then(stdout => {
-      console.log('STDOUT', stdout)
+      //console.log('STDOUT', stdout)
     })
   })
 
@@ -368,7 +377,7 @@ describe('Stack Info', () => {
       return sls(['info'])
     })
     .then(stdout => {
-      console.log('STDOUT', stdout)
+      //console.log('STDOUT', stdout)
     })
   })
 })
