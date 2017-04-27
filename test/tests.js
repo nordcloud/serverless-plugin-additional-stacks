@@ -355,6 +355,11 @@ describe('Stack Info', () => {
     return deleteAllStacks()
   })
 
+  after(() => {
+    // Clean up after tests
+    return deleteAllStacks()
+  })
+
   it('is shown as completed after deploying', () => {
     return Promise.resolve()
     .then(() => {
