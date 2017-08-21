@@ -2,7 +2,7 @@
 
 const path = require('path')
 
-class ServerlessPlugin {
+class AdditionalStacksPlugin {
   constructor(serverless, options) {
     this.serverless = serverless
     this.options = options
@@ -413,6 +413,10 @@ class ServerlessPlugin {
         } else {
           if (dots) this.serverless.cli.consoleLog('')
           this.serverless.cli.log('Additional stack ' + stackName + ' ' + this.phrases[operation][state] + ' (' + response.StackStatus + ').')
+          if (this.stackStatusCodes[response.StackStatus] === 'failure') {
+            // The operation failed, so return an error to Serverless
+            return Promise.reject(new Error('Additional stack ' + stackName + ' ' + this.phrases[operation][state] + ' (' + response.StackStatus + ')'))
+          }
         }
       })
     }
@@ -420,4 +424,4 @@ class ServerlessPlugin {
   }
 }
 
-module.exports = ServerlessPlugin
+module.exports = AdditionalStacksPlugin
