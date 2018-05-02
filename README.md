@@ -61,7 +61,7 @@ custom:
         S3BucketData:
           Type: AWS::S3::Bucket
           Properties:
-            Name: ${self:service}-data
+            BucketName: ${self:service}-data
 ```
 
 The syntax of the Resources section is identical to the normal resources
