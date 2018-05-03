@@ -61,6 +61,12 @@ class AdditionalStacksPlugin {
             },
           },
         },
+        options: {
+          'skip-additionalstacks': {
+            usage: 'Skip deploying additional stacks',
+            required: false,
+          },
+        },
       },
       remove: {
         commands: {
@@ -119,6 +125,8 @@ class AdditionalStacksPlugin {
   // Deploy additional stacks befpre deploying the main stack
   // These are stacks with Deploy: Before, which is the default
   beforeDeployGlobal() {
+    if (this.options['skip-additionalstacks'])
+      return
     const stacks = this.getAdditionalBeforeStacks()
     if (Object.keys(stacks).length > 0) {
       this.serverless.cli.log('Deploying additional stacks...')
@@ -129,6 +137,8 @@ class AdditionalStacksPlugin {
   // Deploy additional stacks after deploying the main stack
   // These are stacks with Deploy: After
   afterDeployGlobal() {
+    if (this.options['skip-additionalstacks'])
+      return
     const stacks = this.getAdditionalAfterStacks()
     if (Object.keys(stacks).length > 0) {
       this.serverless.cli.log('Deploying additional stacks...')
@@ -138,6 +148,8 @@ class AdditionalStacksPlugin {
 
   // Show additional stack info after normal info
   afterInfoGlobal() {
+    if (this.options['skip-additionalstacks'])
+      return
     const stacks = this.getAdditionalStacks()
     if (Object.keys(stacks).length > 0) {
       this.serverless.cli.consoleLog('additional stacks:')
