@@ -116,6 +116,10 @@ To deploy an additional stack individually, you can use:
 
     sls deploy additionalstacks --stack [stackname]
 
+To only deploy the Serverless service without deploying additional stacks, you can use:
+
+    sls deploy --skip-additionalstacks
+
 If you want to remove an additional stack, you need to run:
 
     sls remove additionalstacks --stack [stackname]
