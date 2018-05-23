@@ -252,14 +252,17 @@ class AdditionalStacksPlugin {
     // Generate full stack name
     const fullStackName = this.getFullStackName(stackName, stack)
 
+    // Stack deploy parameters (optional)
+    const deployParameters = stack.DeployParameters || []
+
     return this.describeStack(fullStackName)
     .then(stackStatus => {
       if (!stackStatus) {
         // Create stack
-        return this.createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
+        return this.createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags, deployParameters)
       } else {
         // Update stack
-        return this.updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
+        return this.updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags, deployParameters)
       }
     })
   }
@@ -311,7 +314,7 @@ class AdditionalStacksPlugin {
     })
   }
 
-  createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags) {
+  createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags, deployParameters) {
     // These are the same parameters that Serverless uses in https://github.com/serverless/serverless/blob/master/lib/plugins/aws/deploy/lib/createStack.js
     const params = {
       StackName: fullStackName,
@@ -320,7 +323,7 @@ class AdditionalStacksPlugin {
         'CAPABILITY_IAM',
         'CAPABILITY_NAMED_IAM',
       ],
-      Parameters: [],
+      Parameters: deployParameters || [],
       TemplateBody: JSON.stringify(compiledCloudFormationTemplate),
       Tags: Object.keys(stackTags).map((key) => ({ Key: key, Value: stackTags[key] })),
     }
@@ -338,7 +341,7 @@ class AdditionalStacksPlugin {
     })
   }
 
-  updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags) {
+  updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags, deployParameters) {
     // These are the same parameters that Serverless uses in https://github.com/serverless/serverless/blob/master/lib/plugins/aws/lib/updateStack.js
     const params = {
       StackName: fullStackName,
@@ -346,7 +349,7 @@ class AdditionalStacksPlugin {
         'CAPABILITY_IAM',
         'CAPABILITY_NAMED_IAM',
       ],
-      Parameters: [],
+      Parameters: deployParameters || [],
       TemplateBody: JSON.stringify(compiledCloudFormationTemplate),
       Tags: Object.keys(stackTags).map((key) => ({ Key: key, Value: stackTags[key] })),
     }
