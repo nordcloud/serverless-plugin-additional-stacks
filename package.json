@@ -1,7 +1,10 @@
 {
   "name": "serverless-plugin-additional-stacks",
-  "version": "0.9.1",
+  "version": "1.2.0",
   "main": "index.js",
   "repository": {},
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "test": "cd test && npm run test"
+  }
 }

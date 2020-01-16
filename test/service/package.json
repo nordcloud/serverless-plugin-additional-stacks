@@ -1,0 +1,10 @@
+{
+  "name": "serverless-plugin-additional-stacks-test-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": {},
+  "license": "MIT",
+  "scripts": {
+    "install": "mkdir -p node_modules/serverless-plugin-additional-stacks && cp ../../{index.js,package.json,README.md} node_modules/serverless-plugin-additional-stacks/"
+  }
+}

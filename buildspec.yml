@@ -1,0 +1,9 @@
+version: 0.1
+phases:
+  install:
+    commands:
+      - mkdir -p test/service/node_modules/serverless-plugin-additional-stacks && cp index.js package.json README.md test/service/node_modules/serverless-plugin-additional-stacks/
+      - cd test && npm install
+  build:
+    commands:
+      - cd test && npm test

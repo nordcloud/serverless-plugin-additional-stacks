@@ -1,8 +1,9 @@
-# PRE-RELEASE (0.9.1)
-
 # Additional Stacks Plugin for Serverless 1.x
-Created by Kenneth Falck <<kennu@sc5.io>> in 2017.  
-Copyright [SC5 Online](https://sc5.io). Released under the MIT license.
+
+Created by Kenneth Falck <<kennu@nordcloud.com>>.
+Copyright [Nordcloud Solutions](https://nordcloud.com) 2017-2018. Released under the MIT license.
+
+![Build Status](https://codebuilder.sc5.io/badge/serverless-plugin-additional-stacks?1)
 
 ## Overview and purpose
 
@@ -60,7 +61,7 @@ custom:
         S3BucketData:
           Type: AWS::S3::Bucket
           Properties:
-            Name: ${self:service}-data
+            BucketName: ${self:service}-data
 ```
 
 The syntax of the Resources section is identical to the normal resources
@@ -80,6 +81,7 @@ custom:
   additionalStacks:
     stackName:
       Deploy: After
+      DeployParameters: []
       StackName: CustomName
       Resources: ...
 
@@ -93,6 +95,21 @@ Lambda functions start running.
 
 If you need to deploy an additional stack *after* other CloudFormation
 resources, you can add `Deploy: After` to its definition.
+
+#### DeployParameters: [...]
+
+By default, stacks are deployed with empty parameters ([]). You can use
+`DeployParameters: [...]` to specify parameters as an array with the same syntax
+that the AWS SDK createStack() and updateStack() functions use. It looks like
+this in YAML:
+
+```yml
+DeployParameters:
+  - ParameterKey: param1
+    ParameterValue: value1
+  - ParameterKey: param2
+    ParameterValue: value2
+```
 
 #### StackName: CustomName
 
@@ -114,6 +131,10 @@ To deploy all additional stacks without deploying tje Serverless service, you ca
 To deploy an additional stack individually, you can use:
 
     sls deploy additionalstacks --stack [stackname]
+
+To only deploy the Serverless service without deploying additional stacks, you can use:
+
+    sls deploy --skip-additionalstacks
 
 If you want to remove an additional stack, you need to run:
 

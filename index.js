@@ -2,7 +2,7 @@
 
 const path = require('path')
 
-class ServerlessPlugin {
+class AdditionalStacksPlugin {
   constructor(serverless, options) {
     this.serverless = serverless
     this.options = options
@@ -59,6 +59,12 @@ class ServerlessPlugin {
                 required: false,
               },
             },
+          },
+        },
+        options: {
+          'skip-additionalstacks': {
+            usage: 'Skip deploying additional stacks',
+            required: false,
           },
         },
       },
@@ -119,6 +125,8 @@ class ServerlessPlugin {
   // Deploy additional stacks befpre deploying the main stack
   // These are stacks with Deploy: Before, which is the default
   beforeDeployGlobal() {
+    if (this.options['skip-additionalstacks'])
+      return
     const stacks = this.getAdditionalBeforeStacks()
     if (Object.keys(stacks).length > 0) {
       this.serverless.cli.log('Deploying additional stacks...')
@@ -129,6 +137,8 @@ class ServerlessPlugin {
   // Deploy additional stacks after deploying the main stack
   // These are stacks with Deploy: After
   afterDeployGlobal() {
+    if (this.options['skip-additionalstacks'])
+      return
     const stacks = this.getAdditionalAfterStacks()
     if (Object.keys(stacks).length > 0) {
       this.serverless.cli.log('Deploying additional stacks...')
@@ -138,6 +148,8 @@ class ServerlessPlugin {
 
   // Show additional stack info after normal info
   afterInfoGlobal() {
+    if (this.options['skip-additionalstacks'])
+      return
     const stacks = this.getAdditionalStacks()
     if (Object.keys(stacks).length > 0) {
       this.serverless.cli.consoleLog('additional stacks:')
@@ -203,16 +215,16 @@ class ServerlessPlugin {
     let promise = Promise.resolve()
     Object.keys(stacks).map(stackName => {
       promise = promise
-      .then(() => {
-        return this.deployStack(stackName, stacks[stackName])
-      })
+        .then(() => {
+          return this.deployStack(stackName, stacks[stackName])
+        })
     })
     return promise
   }
 
   // This is where we actually handle the deployment to AWS
   deployStack(stackName, stack) {
-    // Generate the CloudFormation template
+    // Generate the CloudFomation template
     const compiledCloudFormationTemplate = {
       "AWSTemplateFormatVersion": "2010-09-09",
       "Description": stack.Description || "Additional AWS CloudFormation template for this Serverless application",
@@ -230,29 +242,35 @@ class ServerlessPlugin {
       STAGE: this.options.stage || this.serverless.service.provider.stage
     }
     if (typeof stack.Tags === 'object') {
-      // Add custom tags
+      // Add custom tags specified only for this stack
       Object.assign(stackTags, stack.Tags)
+    } else if (typeof this.serverless.service.provider.stackTags === 'object') {
+      // Add stackTags from Serverless main provider config
+      Object.assign(stackTags, this.serverless.service.provider.stackTags)
     }
 
     // Generate full stack name
     const fullStackName = this.getFullStackName(stackName, stack)
 
+    // Stack deploy parameters (optional)
+    const deployParameters = stack.DeployParameters || []
+
     return this.writeUpdateTemplateToDisk(stackName, compiledCloudFormationTemplate)
-    .then(() => { return this.describeStack(fullStackName) })
-    .then(stackStatus => {
-      if(this.options.noDeploy){
-        this.serverless.cli.log('Did not deploy ' + fullStackName + ' due to --noDeploy')
-        return Promise.resolve()
-      } else {
-        if (!stackStatus) {
-          // Create stack
-          return this.createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
+      .then(() => { return this.describeStack(fullStackName) })
+      .then(stackStatus => {
+        if (this.options.noDeploy) {
+          this.serverless.cli.log('Did not deploy ' + fullStackName + ' due to --noDeploy')
+          return Promise.resolve()
         } else {
-          // Update stack
-          return this.updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags)
+          if (!stackStatus) {
+            // Create stack
+            return this.createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags, deployParameters)
+          } else {
+            // Update stack
+            return this.updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags, deployParameters)
+          }
         }
-      }
-    })
+      })
   }
 
   // This deletes all the specified stacks
@@ -260,9 +278,9 @@ class ServerlessPlugin {
     let promise = Promise.resolve()
     Object.keys(stacks).map(stackName => {
       promise = promise
-      .then(() => {
-        return this.deleteStack(stackName, stacks[stackName])
-      })
+        .then(() => {
+          return this.deleteStack(stackName, stacks[stackName])
+        })
     })
     return promise
   }
@@ -272,9 +290,9 @@ class ServerlessPlugin {
     let promise = Promise.resolve()
     Object.keys(stacks).map(stackName => {
       promise = promise
-      .then(() => {
-        return this.infoStack(stackName, stacks[stackName])
-      })
+        .then(() => {
+          return this.infoStack(stackName, stacks[stackName])
+        })
     })
     return promise
   }
@@ -283,26 +301,26 @@ class ServerlessPlugin {
     return this.provider.request(
       'CloudFormation',
       'describeStacks', {
-        StackName: fullStackName,
-      },
+      StackName: fullStackName,
+    },
       this.options.stage,
       this.options.region
     )
-    .then(response => {
-      return response.Stacks && response.Stacks[0]
-    })
-    .then(null, err => {
-      if (err.message && err.message.match(/does not exist$/)) {
-        // Stack doesn't exist yet
-        return null
-      } else {
-        // Some other error, let it throw
-        return Promise.reject(err)
-      }
-    })
+      .then(response => {
+        return response.Stacks && response.Stacks[0]
+      })
+      .then(null, err => {
+        if (err.message && err.message.match(/does not exist$/)) {
+          // Stack doesn't exist yet
+          return null
+        } else {
+          // Some other error, let it throw
+          return Promise.reject(err)
+        }
+      })
   }
 
-  createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags) {
+  createStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags, deployParameters) {
     // These are the same parameters that Serverless uses in https://github.com/serverless/serverless/blob/master/lib/plugins/aws/deploy/lib/createStack.js
     const params = {
       StackName: fullStackName,
@@ -311,7 +329,7 @@ class ServerlessPlugin {
         'CAPABILITY_IAM',
         'CAPABILITY_NAMED_IAM',
       ],
-      Parameters: [],
+      Parameters: deployParameters || [],
       TemplateBody: JSON.stringify(compiledCloudFormationTemplate),
       Tags: Object.keys(stackTags).map((key) => ({ Key: key, Value: stackTags[key] })),
     }
@@ -324,9 +342,9 @@ class ServerlessPlugin {
       this.options.stage,
       this.options.region
     )
-    .then(() => {
-      return this.waitForStack(stackName, fullStackName, 'create')
-    })
+      .then(() => {
+        return this.waitForStack(stackName, fullStackName, 'create')
+      })
   }
 
   writeUpdateTemplateToDisk(stackName, stack) {
@@ -340,7 +358,7 @@ class ServerlessPlugin {
     return Promise.resolve();
   }
 
-  updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags) {
+  updateStack(stackName, fullStackName, compiledCloudFormationTemplate, stackTags, deployParameters) {
     // These are the same parameters that Serverless uses in https://github.com/serverless/serverless/blob/master/lib/plugins/aws/lib/updateStack.js
     const params = {
       StackName: fullStackName,
@@ -348,7 +366,7 @@ class ServerlessPlugin {
         'CAPABILITY_IAM',
         'CAPABILITY_NAMED_IAM',
       ],
-      Parameters: [],
+      Parameters: deployParameters || [],
       TemplateBody: JSON.stringify(compiledCloudFormationTemplate),
       Tags: Object.keys(stackTags).map((key) => ({ Key: key, Value: stackTags[key] })),
     }
@@ -360,19 +378,19 @@ class ServerlessPlugin {
       this.options.stage,
       this.options.region
     )
-    .then(() => {
-      this.serverless.cli.log('Updating additional stack ' + stackName + '...')
-      return this.waitForStack(stackName, fullStackName, 'update')
-    })
-    .then(null, err => {
-      if (err.message && err.message.match(/^No updates/)) {
-        // Stack is unchanged, ignore error
-        this.serverless.cli.log('Additional stack ' + stackName + ' has not changed.')
-        return Promise.resolve()
-      } else {
-        return Promise.reject(err)
-      }
-    })
+      .then(() => {
+        this.serverless.cli.log('Updating additional stack ' + stackName + '...')
+        return this.waitForStack(stackName, fullStackName, 'update')
+      })
+      .then(null, err => {
+        if (err.message && err.message.match(/^No updates/)) {
+          // Stack is unchanged, ignore error
+          this.serverless.cli.log('Additional stack ' + stackName + ' has not changed.')
+          return Promise.resolve()
+        } else {
+          return Promise.reject(err)
+        }
+      })
   }
 
   // This is where we actually handle the stack deletion from AWS
@@ -383,14 +401,14 @@ class ServerlessPlugin {
     return this.provider.request(
       'CloudFormation',
       'deleteStack', {
-        StackName: fullStackName,
-      },
+      StackName: fullStackName,
+    },
       this.options.stage,
       this.options.region
     )
-    .then(() => {
-      return this.waitForStack(stackName, fullStackName, 'delete')
-    })
+      .then(() => {
+        return this.waitForStack(stackName, fullStackName, 'delete')
+      })
   }
 
   // This is where we actually show information about the CloudFormation stack in AWS
@@ -398,40 +416,44 @@ class ServerlessPlugin {
     // Generate full stack name
     const fullStackName = this.getFullStackName(stackName, stack)
     return this.describeStack(fullStackName)
-    .then(status => {
-      if (!status) {
-        this.serverless.cli.consoleLog('  ' + stackName + ': does not exist')
-      } else {
-        this.serverless.cli.consoleLog('  ' + stackName + ': ' + status.StackStatus)
-      }
-    })
+      .then(status => {
+        if (!status) {
+          this.serverless.cli.consoleLog('  ' + stackName + ': does not exist')
+        } else {
+          this.serverless.cli.consoleLog('  ' + stackName + ': ' + status.StackStatus)
+        }
+      })
   }
 
   waitForStack(stackName, fullStackName, operation) {
     let dots = 0
     const readMore = () => {
       return this.describeStack(fullStackName)
-      .then(response => {
-        if (!response) {
-          // Stack does not exist
-          if (dots) this.serverless.cli.consoleLog('')
-          this.serverless.cli.log('Additional stack ' + stackName + ' removed successfully.')
-          return
-        }
-        const state = this.stackStatusCodes[response.StackStatus]
-        if (state === 'in_progress') {
-          // Continue until no longer in progress
-          this.serverless.cli.printDot()
-          dots += 1
-          return new Promise((resolve, reject) => setTimeout(resolve, 5000)).then(readMore)
-        } else {
-          if (dots) this.serverless.cli.consoleLog('')
-          this.serverless.cli.log('Additional stack ' + stackName + ' ' + this.phrases[operation][state] + ' (' + response.StackStatus + ').')
-        }
-      })
+        .then(response => {
+          if (!response) {
+            // Stack does not exist
+            if (dots) this.serverless.cli.consoleLog('')
+            this.serverless.cli.log('Additional stack ' + stackName + ' removed successfully.')
+            return
+          }
+          const state = this.stackStatusCodes[response.StackStatus]
+          if (state === 'in_progress') {
+            // Continue until no longer in progress
+            this.serverless.cli.printDot()
+            dots += 1
+            return new Promise((resolve, reject) => setTimeout(resolve, 5000)).then(readMore)
+          } else {
+            if (dots) this.serverless.cli.consoleLog('')
+            this.serverless.cli.log('Additional stack ' + stackName + ' ' + this.phrases[operation][state] + ' (' + response.StackStatus + ').')
+            if (this.stackStatusCodes[response.StackStatus] === 'failure') {
+              // The operation failed, so return an error to Serverless
+              return Promise.reject(new Error('Additional stack ' + stackName + ' ' + this.phrases[operation][state] + ' (' + response.StackStatus + ')'))
+            }
+          }
+        })
     }
     return readMore()
   }
 }
 
-module.exports = ServerlessPlugin
+module.exports = AdditionalStacksPlugin
