@@ -124,7 +124,7 @@ Your additional stacks will be deployed automatically when you run:
 
     sls deploy
 
-To deploy all additional stacks without deploying tje Serverless service, you can use:
+To deploy all additional stacks without deploying the Serverless service, you can use:
 
     sls deploy additionalstacks
 
