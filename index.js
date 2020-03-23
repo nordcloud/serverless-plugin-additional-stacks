@@ -193,7 +193,7 @@ class AdditionalStacksPlugin {
         return Promise.reject(new Error('Additional stack not found: ' + this.options.stack))
       }
     } else {
-      // Deploy all additional stacks
+      // Remove all additional stacks
       if (Object.keys(stacks).length > 0) {
         this.serverless.cli.log('Removing all additional stacks...')
         return this.deleteStacks(stacks)
@@ -273,10 +273,10 @@ class AdditionalStacksPlugin {
       })
   }
 
-  // This deletes all the specified stacks
+  // This deletes all the specified stacks in reverse order
   deleteStacks(stacks) {
     let promise = Promise.resolve()
-    Object.keys(stacks).map(stackName => {
+    Object.keys(stacks).reverse().map(stackName => {
       promise = promise
         .then(() => {
           return this.deleteStack(stackName, stacks[stackName])
