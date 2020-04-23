@@ -1,0 +1,4 @@
+Deploy: After
+StackName: ${self:service}-${self:custom.stage}-customname-tertiary
+Tags:
+  Owner: yetanother@example.org

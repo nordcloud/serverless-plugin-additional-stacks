@@ -1,3 +1,5 @@
+org: cpcheatsnerak2007
+app: my-first-app
 # Welcome to Serverless!
 #
 # This file is the main config file for your service.
@@ -121,3 +123,6 @@ custom:
           Type: AWS::SNS::Topic
           Properties:
             TopicName: "${self:service}-secondary-${opt:topicname, self:custom.topicName}-${self:custom.stage}"
+    tertiary:
+      - ${file(tertiary-meta.yml)}
+      - ${file(tertiary-resource.yml)}

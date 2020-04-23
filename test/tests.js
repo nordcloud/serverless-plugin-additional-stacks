@@ -15,6 +15,13 @@ const childProcess = require('child_process')
 const path = require('path')
 const chalk = require('chalk')
 
+// set region if not set (as not set by the SDK by default)
+if (!AWS.config.region) {
+  AWS.config.update({
+    region: 'us-east-1'
+  });
+}
+
 const cloudformation = new AWS.CloudFormation()
 chai.use(chaiAsPromised)
 const assert = chai.assert
@@ -25,6 +32,8 @@ const PRIMARY_STACK = 'primary'
 const PRIMARY_STACK_FULLNAME = 'additional-stacks-plugin-service-test-primary'
 const SECONDARY_STACK = 'secondary'
 const SECONDARY_STACK_FULLNAME = 'additional-stacks-plugin-service-test-customname-secondary'
+const TERTIARY_STACK = 'tertiary'
+const TERTIARY_STACK_FULLNAME = 'additional-stacks-plugin-service-test-customname-tertiary'
 
 function sls(args) {
   console.log('   ', chalk.gray.dim('$'), chalk.gray.dim('sls ' + args.join(' ')))
@@ -95,6 +104,7 @@ function describeAllStacks() {
     describeStack(BASE_STACK_FULLNAME),
     describeStack(PRIMARY_STACK_FULLNAME),
     describeStack(SECONDARY_STACK_FULLNAME),
+    describeStack(TERTIARY_STACK_FULLNAME),
   ])
 }
 
@@ -116,6 +126,9 @@ function deleteAllStacks() {
   .then(() => {
     return deleteStack(SECONDARY_STACK_FULLNAME)
   })
+  .then(() => {
+    return deleteStack(TERTIARY_STACK_FULLNAME)
+  })
 }
 
 describe('Automatic Stack Deployment', () => {
@@ -136,12 +149,15 @@ describe('Automatic Stack Deployment', () => {
       assert.isOk(responses[0], 'serverless stack')
       assert.isOk(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
+      assert.isOk(responses[3], 'tertiary stack')
       assert.equal(responses[0].StackStatus, 'UPDATE_COMPLETE', 'serverless stack')
       assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
       assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
+      assert.equal(responses[3].StackStatus, 'CREATE_COMPLETE', 'tertiary stack')
       assert.equal(responses[0].Tags.filter(tag => tag.Key === 'Owner')[0].Value, 'owner@example.org', 'serverless stack custom tag')
       assert.equal(responses[1].Tags.filter(tag => tag.Key === 'Owner')[0].Value, 'owner@example.org', 'primary stack custom tag')
       assert.equal(responses[2].Tags.filter(tag => tag.Key === 'Owner')[0].Value, 'another@example.org', 'secondary stack custom tag')
+      assert.equal(responses[3].Tags.filter(tag => tag.Key === 'Owner')[0].Value, 'yetanother@example.org', 'tertiary stack custom tag')
     })
   })
 
@@ -157,9 +173,11 @@ describe('Automatic Stack Deployment', () => {
       assert.isOk(responses[0], 'serverless stack')
       assert.isOk(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
+      assert.isOk(responses[3], 'tertiary stack')
       assert.equal(responses[0].StackStatus, 'UPDATE_COMPLETE', 'serverless stack')
       assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
       assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
+      assert.equal(responses[3].StackStatus, 'CREATE_COMPLETE', 'tertiary stack')
     })
   })
 
@@ -176,9 +194,11 @@ describe('Automatic Stack Deployment', () => {
       assert.isOk(responses[0], 'serverless stack')
       assert.isOk(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
+      assert.isOk(responses[3], 'tertiary stack')
       assert.equal(responses[0].StackStatus, 'UPDATE_COMPLETE', 'serverless stack')
       assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
       assert.equal(responses[2].StackStatus, 'UPDATE_COMPLETE', 'secondary stack')
+      assert.equal(responses[3].StackStatus, 'CREATE_COMPLETE', 'tertiary stack')
     })
   })
 
@@ -194,8 +214,10 @@ describe('Automatic Stack Deployment', () => {
       assert.isNull(responses[0], 'serverless stack')
       assert.isOk(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
+      assert.isOk(responses[3], 'tertiary stack')
       assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
       assert.equal(responses[2].StackStatus, 'UPDATE_COMPLETE', 'secondary stack')
+      assert.equal(responses[3].StackStatus, 'CREATE_COMPLETE', 'tertiary stack')
     })
   })
 })
@@ -218,8 +240,10 @@ describe('Manual Stack Deployment', () => {
       assert.isNull(responses[0], 'serverless stack')
       assert.isOk(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
+      assert.isOk(responses[3], 'tertiary stack')
       assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
       assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
+      assert.equal(responses[3].StackStatus, 'CREATE_COMPLETE', 'tertiary stack')
     })
   })
 
@@ -235,8 +259,10 @@ describe('Manual Stack Deployment', () => {
       assert.isNull(responses[0], 'serverless stack')
       assert.isOk(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
+      assert.isOk(responses[3], 'tertiary stack')
       assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
       assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
+      assert.equal(responses[3].StackStatus, 'CREATE_COMPLETE', 'tertiary stack')
     })
   })
 
@@ -253,8 +279,10 @@ describe('Manual Stack Deployment', () => {
       assert.isNull(responses[0], 'serverless stack')
       assert.isOk(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
+      assert.isOk(responses[3], 'tertiary stack')
       assert.equal(responses[1].StackStatus, 'CREATE_COMPLETE', 'primary stack')
       assert.equal(responses[2].StackStatus, 'UPDATE_COMPLETE', 'secondary stack')
+      assert.equal(responses[3].StackStatus, 'CREATE_COMPLETE', 'tertiary stack')
     })
   })
 
@@ -274,6 +302,7 @@ describe('Manual Stack Deployment', () => {
       assert.isOk(responses[0], 'serverless stack')
       assert.isNull(responses[1], 'primary stack')
       assert.isNull(responses[2], 'secondary stack')
+      assert.isNull(responses[3], 'tertiary stack')
       assert.equal(responses[0].StackStatus, 'UPDATE_COMPLETE', 'serverless stack')
     })
   })
@@ -297,7 +326,8 @@ describe('Individual Stack Deployment', () => {
       assert.isNull(responses[0], 'serverless stack')
       assert.isNull(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
-      assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'primary stack')
+      assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
+      assert.isNull(responses[3], 'tertiary stack')
     })
   })
 
@@ -314,6 +344,7 @@ describe('Individual Stack Deployment', () => {
       assert.isNull(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
       assert.equal(responses[2].StackStatus, 'CREATE_COMPLETE', 'secondary stack')
+      assert.isNull(responses[3], 'tertiary stack')
     })
   })
 
@@ -330,6 +361,7 @@ describe('Individual Stack Deployment', () => {
       assert.isNull(responses[1], 'primary stack')
       assert.isOk(responses[2], 'secondary stack')
       assert.equal(responses[2].StackStatus, 'UPDATE_COMPLETE', 'secondary stack')
+      assert.isNull(responses[3], 'tertiary stack')
     })
   })
 
@@ -345,6 +377,7 @@ describe('Individual Stack Deployment', () => {
       assert.isNull(responses[0], 'serverless stack')
       assert.isNull(responses[1], 'primary stack')
       assert.isNull(responses[2], 'secondary stack')
+      assert.isNull(responses[3], 'tertiary stack')
     })
   })
 })

@@ -1,6 +1,7 @@
 'use strict'
 
 const path = require('path')
+const _ = require('lodash')
 
 class AdditionalStacksPlugin {
   constructor(serverless, options) {
@@ -96,8 +97,29 @@ class AdditionalStacksPlugin {
     }
   }
 
+  mergeAdditionalStacks() {
+    // For each key in the additionalStacks, check if it's an array or not.
+    // If it is an array, merge the keys together. Else, return the original value.
+    return Object.fromEntries(Object.entries(this.serverless.service.custom.additionalStacks).map(([k, v], i) => {
+      if (Array.isArray(v)) {
+        return [k, v.reduce((memo, value) => {
+          if (value) {
+            if (typeof value === 'object') {
+              return _.merge(memo, value);
+            }
+            throw new Error(`Non-object value specified in ${key} array: ${value}`);
+          }
+
+          return memo;
+        }, {})];
+      } else {
+        return [k, v];
+      }
+    }));
+  }
+
   getAdditionalStacks() {
-    return this.serverless.service.custom && this.serverless.service.custom.additionalStacks || {}
+    return (this.serverless.service.custom && this.serverless.service.custom.additionalStacks && this.mergeAdditionalStacks()) || {}
   }
 
   getAdditionalBeforeStacks() {
