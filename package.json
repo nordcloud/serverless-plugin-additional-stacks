@@ -8,6 +8,6 @@
     "test": "cd test && npm run test"
   },
   "dependencies": {
-    "lodash": "^4.17.15"
+    "lodash.merge": "^4.6.2"
   }
 }

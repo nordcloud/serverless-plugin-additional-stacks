@@ -1,7 +1,7 @@
 'use strict'
 
 const path = require('path')
-const _ = require('lodash')
+const merge = require('lodash.merge')
 
 class AdditionalStacksPlugin {
   constructor(serverless, options) {
@@ -105,7 +105,7 @@ class AdditionalStacksPlugin {
         return [k, v.reduce((memo, value) => {
           if (value) {
             if (typeof value === 'object') {
-              return _.merge(memo, value);
+              return merge(memo, value);
             }
             throw new Error(`Non-object value specified in ${key} array: ${value}`);
           }
