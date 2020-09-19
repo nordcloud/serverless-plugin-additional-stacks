@@ -333,6 +333,10 @@ class AdditionalStacksPlugin {
       TemplateBody: JSON.stringify(compiledCloudFormationTemplate),
       Tags: Object.keys(stackTags).map((key) => ({ Key: key, Value: stackTags[key] })),
     }
+    // If the CloudFormation Template has the Transform tag, an additional capability is needed.
+    if (compiledCloudFormationTemplate.Transform) {
+      params.Capabilities.push("CAPABILITY_AUTO_EXPAND")
+    }
 
     this.serverless.cli.log('Creating additional stack ' + stackName + '...')
     return this.provider.request(
@@ -369,6 +373,10 @@ class AdditionalStacksPlugin {
       Parameters: deployParameters || [],
       TemplateBody: JSON.stringify(compiledCloudFormationTemplate),
       Tags: Object.keys(stackTags).map((key) => ({ Key: key, Value: stackTags[key] })),
+    }
+    // If the CloudFormation Template has the Transform tag, an additional capability is needed.
+    if (compiledCloudFormationTemplate.Transform) {
+      params.Capabilities.push("CAPABILITY_AUTO_EXPAND")
     }
 
     return this.provider.request(
