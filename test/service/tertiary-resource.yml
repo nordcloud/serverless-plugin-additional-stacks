@@ -1,0 +1,5 @@
+Resources:
+  SnsTopicTertiary:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: "${self:service}-tertiary-${opt:topicname, self:custom.topicName}-${self:custom.stage}"
