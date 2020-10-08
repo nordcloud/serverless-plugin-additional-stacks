@@ -8,6 +8,8 @@ Copyright [Nordcloud](https://nordcloud.com) 2017-2020. Released under the MIT l
 This plugin provides support for managing multiple AWS CloudFormation stacks
 in your Serverless 1.x service (serverless.yml).
 
+The plugin requires Node.js 12.x or later due to use of Object.fromEntries().
+
 Normally, Serverless creates a single CloudFormation stack which contains
 all your CloudFormation resources. If you ever delete your service, these
 resources are also deleted, including data stored in S3 or DynamoDB.
