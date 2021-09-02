@@ -1,7 +1,7 @@
 # Additional Stacks Plugin for Serverless 1.x
 
 Created by Kenneth Falck <<kennu@nordcloud.com>>.
-Copyright [Nordcloud](https://nordcloud.com) 2017-2020. Released under the MIT license.
+Copyright [Nordcloud](https://nordcloud.com) 2017-2021. Released under the MIT license.
 
 ## Overview and purpose
 
