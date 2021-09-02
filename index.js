@@ -58,6 +58,7 @@ class AdditionalStacksPlugin {
                 usage: 'Additional stack name to deploy',
                 shortcut: 'k',
                 required: false,
+                type: "string",
               },
             },
           },
@@ -66,6 +67,7 @@ class AdditionalStacksPlugin {
           'skip-additionalstacks': {
             usage: 'Skip deploying additional stacks',
             required: false,
+            type: "boolean",
           },
         },
       },
@@ -81,6 +83,7 @@ class AdditionalStacksPlugin {
                 usage: 'Additional stack name to remove',
                 shortcut: 'k',
                 required: false,
+                type: "string",
               },
             },
           },
