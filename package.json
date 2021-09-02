@@ -4,6 +4,7 @@
   "main": "index.js",
   "repository": {},
   "license": "MIT",
+  "repository": "nordcloud/serverless-plugin-additional-stacks",
   "scripts": {
     "test": "cd test && npm run test"
   },
