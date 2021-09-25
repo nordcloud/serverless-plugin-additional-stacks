@@ -416,7 +416,7 @@ class AdditionalStacksPlugin {
         return this.waitForStack(stackName, fullStackName, 'update')
       })
       .then(null, err => {
-        if (err.message && err.message.match(/^No updates/)) {
+        if (err.message && err.message.includes("No updates are to be performed.")) {
           // Stack is unchanged, ignore error
           this.serverless.cli.log('Additional stack ' + stackName + ' has not changed.')
           return Promise.resolve()
