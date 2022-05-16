@@ -18,7 +18,7 @@ const chalk = require('chalk')
 // set region if not set (as not set by the SDK by default)
 if (!AWS.config.region) {
   AWS.config.update({
-    region: 'eu-west-2'
+    region: 'us-east-1'
   });
 }
 
