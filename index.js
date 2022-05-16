@@ -60,6 +60,12 @@ class AdditionalStacksPlugin {
                 required: false,
                 type: "string",
               },
+              noDeploy: {
+                usage: "Generate the template but don't deploy the additional stacks(s)",
+                shortcut: 'n',
+                required: false,
+                type: "boolean",
+              },
             },
           },
         },

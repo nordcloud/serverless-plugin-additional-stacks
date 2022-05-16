@@ -75,6 +75,25 @@ function describeStack(stackName) {
   })
 }
 
+function describeStackEvents(stackName) {
+  return cloudformation.describeStackEvents({
+    StackName: stackName,
+  })
+      .promise()
+      .then(response => {
+        return response.StackEvents || []
+      })
+      .then(null, err => {
+        if (err.message && err.message.match(/does not exist$/)) {
+          // Stack doesn't exist yet
+          return null
+        } else {
+          // Some other error, let it throw
+          return Promise.reject(err)
+        }
+      })
+}
+
 function deleteStack(stackName) {
   return Promise.resolve()
   .then(() => {
@@ -417,5 +436,40 @@ describe('Stack Info', () => {
     .then(stdout => {
       //console.log('STDOUT', stdout)
     })
+  })
+})
+
+describe('Dry run (--noDeploy) mode', () => {
+  before(() => {
+    // Clean up before tests
+    return deleteAllStacks().then(() => {
+      return sls(['deploy']);
+    })
+  })
+
+  function getLatestStackEventTimestamp() {
+    return describeStackEvents(SECONDARY_STACK_FULLNAME).then((response) => {
+      return new Date(response[0].Timestamp)
+    });
+  }
+
+  it('Should not attempt to create or update stack when --noDeploy arg specified', () => {
+    return Promise.resolve()
+        .then(() => {
+          return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK]) //, '--topicname', 'newname'])
+        }).then(getLatestStackEventTimestamp).then((previous) => {
+          return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname', '--noDeploy'])
+              .then(getLatestStackEventTimestamp)
+              .then((latest) => {
+                assert.deepEqual(previous, latest) // should be no new events
+                return latest;
+              })
+        }).then(getLatestStackEventTimestamp).then((previous) => {
+          return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname'])
+              .then(getLatestStackEventTimestamp)
+              .then((latest) => {
+                assert.isAbove(latest.getTime(), previous.getTime()) // should be new events now
+              })
+        })
   })
 })
