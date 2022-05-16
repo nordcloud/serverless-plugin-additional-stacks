@@ -75,6 +75,25 @@ function describeStack(stackName) {
   })
 }
 
+function describeStackEvents(stackName) {
+  return cloudformation.describeStackEvents({
+    StackName: stackName,
+  })
+      .promise()
+      .then(response => {
+        return response.StackEvents || []
+      })
+      .then(null, err => {
+        if (err.message && err.message.match(/does not exist$/)) {
+          // Stack doesn't exist yet
+          return null
+        } else {
+          // Some other error, let it throw
+          return Promise.reject(err)
+        }
+      })
+}
+
 function deleteStack(stackName) {
   return Promise.resolve()
   .then(() => {
@@ -417,5 +436,29 @@ describe('Stack Info', () => {
     .then(stdout => {
       //console.log('STDOUT', stdout)
     })
+  })
+})
+
+describe('Dry run (--noDeploy) mode', () => {
+  before(async () => {
+    // Clean up before tests
+    await deleteAllStacks()
+    return await sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK]);
+  })
+
+  const getLatestStackEventTimestamp = async() => {
+    const response = await describeStackEvents(SECONDARY_STACK_FULLNAME)
+    return new Date(response[0].Timestamp)
+  }
+
+  it('Should not attempt to create or update stack when --noDeploy arg specified', async () => {
+    const previous = await getLatestStackEventTimestamp()
+    await sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname', '--noDeploy'])
+    const latestAfterNoDeploy = await getLatestStackEventTimestamp()
+    assert.deepEqual(previous, latestAfterNoDeploy) // should be no new events
+
+    await sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname'])
+    const latestAfterDeploy = await getLatestStackEventTimestamp()
+    assert.isAbove(latestAfterDeploy.getTime(), latestAfterNoDeploy.getTime()) // should be new events now
   })
 })
