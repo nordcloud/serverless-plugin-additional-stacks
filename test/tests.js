@@ -18,7 +18,7 @@ const chalk = require('chalk')
 // set region if not set (as not set by the SDK by default)
 if (!AWS.config.region) {
   AWS.config.update({
-    region: 'us-east-1'
+    region: 'eu-west-2'
   });
 }
 
@@ -440,36 +440,25 @@ describe('Stack Info', () => {
 })
 
 describe('Dry run (--noDeploy) mode', () => {
-  before(() => {
+  before(async () => {
     // Clean up before tests
-    return deleteAllStacks().then(() => {
-      return sls(['deploy']);
-    })
+    await deleteAllStacks()
+    return await sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK]);
   })
 
-  function getLatestStackEventTimestamp() {
-    return describeStackEvents(SECONDARY_STACK_FULLNAME).then((response) => {
-      return new Date(response[0].Timestamp)
-    });
+  const getLatestStackEventTimestamp = async() => {
+    const response = await describeStackEvents(SECONDARY_STACK_FULLNAME)
+    return new Date(response[0].Timestamp)
   }
 
-  it('Should not attempt to create or update stack when --noDeploy arg specified', () => {
-    return Promise.resolve()
-        .then(() => {
-          return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK]) //, '--topicname', 'newname'])
-        }).then(getLatestStackEventTimestamp).then((previous) => {
-          return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname', '--noDeploy'])
-              .then(getLatestStackEventTimestamp)
-              .then((latest) => {
-                assert.deepEqual(previous, latest) // should be no new events
-                return latest;
-              })
-        }).then(getLatestStackEventTimestamp).then((previous) => {
-          return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname'])
-              .then(getLatestStackEventTimestamp)
-              .then((latest) => {
-                assert.isAbove(latest.getTime(), previous.getTime()) // should be new events now
-              })
-        })
+  it('Should not attempt to create or update stack when --noDeploy arg specified', async () => {
+    const previous = await getLatestStackEventTimestamp()
+    await sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname', '--noDeploy'])
+    const latestAfterNoDeploy = await getLatestStackEventTimestamp()
+    assert.deepEqual(previous, latestAfterNoDeploy) // should be no new events
+
+    await sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname'])
+    const latestAfterDeploy = await getLatestStackEventTimestamp()
+    assert.isAbove(latestAfterDeploy.getTime(), latestAfterNoDeploy.getTime()) // should be new events now
   })
 })
