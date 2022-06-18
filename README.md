@@ -39,11 +39,11 @@ in your serverless.yml, placed under the `custom.additionalStacks` section.
 
 To install with npm, run this in your service directory:
 
-    npm install --save @mamezou-tech/serverless-plugin-additional-stacks
+    npm install --save @kudoh/serverless-plugin-additional-stacks
 
 To install with yarn, run this in your service directory:
 
-    yarn add @mamezou-tech/serverless-plugin-additional-stacks
+    yarn add @doc/serverless-plugin-additional-stacks
 
 Then add this to your `serverless.yml`:
 
