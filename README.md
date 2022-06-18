@@ -43,13 +43,13 @@ To install with npm, run this in your service directory:
 
 To install with yarn, run this in your service directory:
 
-    yarn add @doc/serverless-plugin-additional-stacks
+    yarn add @kudoh/serverless-plugin-additional-stacks
 
 Then add this to your `serverless.yml`:
 
 ```yml
 plugins:
- - serverless-plugin-additional-stacks
+ - @kudoh/serverless-plugin-additional-stacks
 ```
 
 ## Configuration
