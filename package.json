@@ -1,9 +1,9 @@
 {
-  "name": "serverless-plugin-additional-stacks",
+  "name": "@kudoh/serverless-plugin-additional-stacks",
   "version": "1.6.0",
   "main": "index.js",
   "license": "MIT",
-  "repository": "nordcloud/serverless-plugin-additional-stacks",
+  "repository": "kudoh/serverless-plugin-additional-stacks",
   "scripts": {
     "test": "cd test && npm run test"
   },

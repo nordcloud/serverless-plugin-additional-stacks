@@ -6,5 +6,8 @@
   "license": "MIT",
   "scripts": {
     "install": "mkdir -p node_modules/serverless-plugin-additional-stacks && cp ../../{index.js,package.json,README.md} node_modules/serverless-plugin-additional-stacks/"
+  },
+  "devDependencies": {
+    "serverless-plugin-additional-stacks": "file://../../"
   }
 }

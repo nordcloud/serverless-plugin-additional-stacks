@@ -1,4 +1,4 @@
-org: cpcheatsnerak2007
+#org: cpcheatsnerak2007
 app: my-first-app
 # Welcome to Serverless!
 #
@@ -24,7 +24,7 @@ plugins:
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs16.x
   stage: test
   region: eu-west-1
   stackTags:
@@ -122,7 +122,7 @@ custom:
         SnsTopicSecondary:
           Type: AWS::SNS::Topic
           Properties:
-            TopicName: "${self:service}-secondary-${opt:topicname, self:custom.topicName}-${self:custom.stage}"
+            TopicName: "${self:service}-secondary-${param:topicname, self:custom.topicName}-${self:custom.stage}"
     tertiary:
       - ${file(tertiary-meta.yml)}
       - ${file(tertiary-resource.yml)}

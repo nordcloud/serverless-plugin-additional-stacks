@@ -1,4 +1,8 @@
-# Additional Stacks Plugin for Serverless 1.x
+# Additional Stacks Plugin for Serverless ~~1.x~~ **3.x**
+
+This repository is a serverless framework v3 version of [serverless-plugin-additional-stacks](https://www.npmjs.com/package/serverless-plugin-additional-stacks).
+
+---
 
 Created by Kenneth Falck <<kennu@nordcloud.com>>.
 Copyright [Nordcloud](https://nordcloud.com) 2017-2021. Released under the MIT license.
@@ -6,7 +10,7 @@ Copyright [Nordcloud](https://nordcloud.com) 2017-2021. Released under the MIT l
 ## Overview and purpose
 
 This plugin provides support for managing multiple AWS CloudFormation stacks
-in your Serverless 1.x service (serverless.yml).
+in your Serverless ~~1.x~~ **3.x** service (serverless.yml).
 
 The plugin requires Node.js 12.x or later due to use of Object.fromEntries().
 
@@ -35,11 +39,11 @@ in your serverless.yml, placed under the `custom.additionalStacks` section.
 
 To install with npm, run this in your service directory:
 
-    npm install --save serverless-plugin-additional-stacks
+    npm install --save @mamezou-tech/serverless-plugin-additional-stacks
 
 To install with yarn, run this in your service directory:
 
-    yarn add serverless-plugin-additional-stacks
+    yarn add @mamezou-tech/serverless-plugin-additional-stacks
 
 Then add this to your `serverless.yml`:
 

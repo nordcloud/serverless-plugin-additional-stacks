@@ -3,3 +3,5 @@ Icon*
 node_modules
 npm-debug.log
 .serverless
+*.iml
+.idea

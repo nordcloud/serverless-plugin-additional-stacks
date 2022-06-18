@@ -184,8 +184,7 @@ describe('Automatic Stack Deployment', () => {
   it('all stacks updated on sls deploy', () => {
     return Promise.resolve()
     .then(() => {
-      // The --topicname argument will cause the secondary stack to rename the SNS topic
-      return sls(['deploy', '--topicname', 'newname'])
+      return sls(['deploy', '--param', 'topicname=newname'])
     })
     .then(() => {
       return describeAllStacks()
@@ -269,8 +268,7 @@ describe('Manual Stack Deployment', () => {
   it('additional stacks updated on sls deploy additionalstacks', () => {
     return Promise.resolve()
     .then(() => {
-      // The --topicname argument will cause the secondary stack to rename the SNS topic
-      return sls(['deploy', 'additionalstacks', '--topicname', 'newname'])
+      return sls(['deploy', 'additionalstacks', '--param', 'topicname=newname'])
     })
     .then(() => {
       return describeAllStacks()
@@ -351,7 +349,7 @@ describe('Individual Stack Deployment', () => {
   it('specified stack is updated on sls deploy additionalstacks --stack', () => {
     return Promise.resolve()
     .then(() => {
-      return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--topicname', 'newname'])
+      return sls(['deploy', 'additionalstacks', '--stack', SECONDARY_STACK, '--param', 'topicname=newname'])
     })
     .then(() => {
       return describeAllStacks()
