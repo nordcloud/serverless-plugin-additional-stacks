@@ -1,3 +1,7 @@
+| :warning:  Please note that this project is no longer maintained there are no plans to add supoprt beyonf Serverless 1.x |
+|:-----|
+| We recomend moving to AWS CDK instead, [see issue #50](https://github.com/nordcloud/serverless-plugin-additional-stacks/issues/50) |
+
 # Additional Stacks Plugin for Serverless 1.x
 
 Created by Kenneth Falck <<kennu@nordcloud.com>>.
